@@ -4,7 +4,7 @@ const Papa = require('papaparse');
 
 // Helper: Load env variables manually from .env file
 function loadEnv() {
-    const envPath = path.join(__dirname, '.env');
+    const envPath = path.join(process.cwd(), '.env');
     if (fs.existsSync(envPath)) {
         const envContent = fs.readFileSync(envPath, 'utf8');
         envContent.split(/\r?\n/).forEach(line => {
@@ -24,13 +24,13 @@ function loadEnv() {
 }
 loadEnv();
 
-// Configuration
+// Configuration - Use process.cwd() for root-relative paths
 const CSV_URL = process.env.GOOGLE_SHEET_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vStAETGqwhy2ux_FQAzPeS_bPUu_pIk_F7n79vO7LKCgAZ1KYHnqJ37WX5c2Higqtzx8gG6HBq7zouS/pub?gid=641735560&single=true&output=csv';
-const LOCAL_DATA_FILE = path.join(__dirname, 'data.json');
-const TEMPLATE_FILE = path.join(__dirname, 'index.html');
-const CSS_FILE = path.join(__dirname, 'style.css');
-const IMAGES_DIR = path.join(__dirname, 'images');
-const DIST_DIR = path.join(__dirname, 'dist');
+const LOCAL_DATA_FILE = path.join(process.cwd(), 'data.json');
+const TEMPLATE_FILE = path.join(process.cwd(), 'index.html');
+const CSS_FILE = path.join(process.cwd(), 'style.css');
+const IMAGES_DIR = path.join(process.cwd(), 'images');
+const DIST_DIR = path.join(process.cwd(), 'dist');
 
 // Helper: Ensure directory exists recursively (thread-safe for parallel execution)
 function ensureDirectoryExistence(filePath) {
@@ -71,7 +71,7 @@ function mapLinkToFilePath(link, region, product) {
     if (!link) {
         // Fallback to region-product slug if no link is provided
         const slug = `${region || 'index'}-${product || ''}`.replace(/[\s/]+/g, '-').replace(/^-+|-+$/g, '');
-        return `${slug}/index.html`.toLowerCase();
+        return `${slug}.html`.toLowerCase();
     }
 
     let cleanPath = link.trim();
@@ -113,23 +113,12 @@ function mapLinkToFilePath(link, region, product) {
         cleanPath = cleanPath.substring(0, cleanPath.length - 1);
     }
 
-    // Strip .html extension if any (e.g. restaurant-card-seoul.html -> restaurant-card-seoul)
-    if (cleanPath.endsWith('.html')) {
-        cleanPath = cleanPath.substring(0, cleanPath.length - 5);
+    // Ensure it ends with .html
+    if (!cleanPath.endsWith('.html')) {
+        cleanPath = cleanPath + '.html';
     }
 
-    // Strip trailing /index if any
-    if (cleanPath.endsWith('/index')) {
-        cleanPath = cleanPath.substring(0, cleanPath.length - 6);
-    }
-
-    // If empty after stripping, return index.html
-    if (cleanPath === '') {
-        return 'index.html';
-    }
-
-    // Return folder-based path
-    return cleanPath + '/index.html';
+    return cleanPath;
 }
 
 // Build function
