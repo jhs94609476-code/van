@@ -71,7 +71,7 @@ function mapLinkToFilePath(link, region, product) {
     if (!link) {
         // Fallback to region-product slug if no link is provided
         const slug = `${region || 'index'}-${product || ''}`.replace(/[\s/]+/g, '-').replace(/^-+|-+$/g, '');
-        return `${slug}.html`.toLowerCase();
+        return `${slug}/index.html`.toLowerCase();
     }
 
     let cleanPath = link.trim();
@@ -96,7 +96,7 @@ function mapLinkToFilePath(link, region, product) {
         // Ignore decoding errors
     }
 
-    cleanPath = cleanPath.trim();
+    cleanPath = cleanPath.trim().toLowerCase();
 
     // If it's just root, map to index.html
     if (cleanPath === '/' || cleanPath === '') {
@@ -113,12 +113,23 @@ function mapLinkToFilePath(link, region, product) {
         cleanPath = cleanPath.substring(0, cleanPath.length - 1);
     }
 
-    // 3. Ensure it ends with .html
-    if (!cleanPath.endsWith('.html')) {
-        cleanPath = cleanPath + '.html';
+    // Strip .html extension if any (e.g. restaurant-card-seoul.html -> restaurant-card-seoul)
+    if (cleanPath.endsWith('.html')) {
+        cleanPath = cleanPath.substring(0, cleanPath.length - 5);
     }
 
-    return cleanPath.toLowerCase();
+    // Strip trailing /index if any
+    if (cleanPath.endsWith('/index')) {
+        cleanPath = cleanPath.substring(0, cleanPath.length - 6);
+    }
+
+    // If empty after stripping, return index.html
+    if (cleanPath === '') {
+        return 'index.html';
+    }
+
+    // Return folder-based path
+    return cleanPath + '/index.html';
 }
 
 // Build function
