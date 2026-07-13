@@ -118,7 +118,7 @@ function mapLinkToFilePath(link, region, product) {
         cleanPath = cleanPath + '.html';
     }
 
-    return cleanPath;
+    return cleanPath.toLowerCase();
 }
 
 // Build function
@@ -203,6 +203,7 @@ async function build() {
     
     // 5. Generate pages in batches to optimize file I/O speed
     let successCount = 0;
+    let firstRowGenerated = false;
     console.log(`⚙️ Generating HTML pages asynchronously...`);
     
     const BATCH_SIZE = 100;
@@ -266,6 +267,17 @@ async function build() {
             try {
                 await fs.promises.writeFile(outputPath, outputHtml, 'utf8');
                 successCount++;
+                
+                let isFirst = false;
+                if (!firstRowGenerated) {
+                    firstRowGenerated = true;
+                    isFirst = true;
+                }
+                if (isFirst) {
+                    const rootIndexPath = path.join(DIST_DIR, 'index.html');
+                    await fs.promises.writeFile(rootIndexPath, outputHtml, 'utf8');
+                    console.log(`🏠 Generated index.html from the first row data.`);
+                }
                 
                 if (successCount % 1000 === 0) {
                     console.log(`⏳ Generated ${successCount} / ${rows.length} pages...`);
