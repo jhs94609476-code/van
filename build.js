@@ -26,11 +26,11 @@ loadEnv();
 
 // Configuration
 const CSV_URL = process.env.GOOGLE_SHEET_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vStAETGqwhy2ux_FQAzPeS_bPUu_pIk_F7n79vO7LKCgAZ1KYHnqJ37WX5c2Higqtzx8gG6HBq7zouS/pub?gid=641735560&single=true&output=csv';
-const LOCAL_DATA_FILE = './data.json';
-const TEMPLATE_FILE = './index.html';
-const CSS_FILE = './style.css';
-const IMAGES_DIR = './images';
-const DIST_DIR = './dist';
+const LOCAL_DATA_FILE = path.join(__dirname, 'data.json');
+const TEMPLATE_FILE = path.join(__dirname, 'index.html');
+const CSS_FILE = path.join(__dirname, 'style.css');
+const IMAGES_DIR = path.join(__dirname, 'images');
+const DIST_DIR = path.join(__dirname, 'dist');
 
 // Helper: Ensure directory exists recursively (thread-safe for parallel execution)
 function ensureDirectoryExistence(filePath) {
