@@ -6,5 +6,7 @@
   "scripts": {
     "build": "node build.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "papaparse": "^5.4.1"
+  }
 }
