@@ -1,0 +1,10 @@
+{
+  "name": "van-landing-builder",
+  "version": "1.0.0",
+  "description": "Static HTML page generator from Google Sheets rows",
+  "main": "build.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {}
+}

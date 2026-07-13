@@ -1,0 +1,14 @@
+[
+  {
+    "link": "/gangnam-pos",
+    "region": "강남구",
+    "product": "포스기",
+    "result": "<p>강남구 사장님들을 위한 결제 관리의 최상의 선택...</p><div class=\"highlight-text\">\"강남구 전 지역 즉시 당일 설치 보장\"</div><p>매장 결제 문제, 이제 전문가에게 맡겨보세요.</p>"
+  },
+  {
+    "link": "https://example.com/seocho-kiosk.html",
+    "region": "서초구",
+    "product": "키오스크",
+    "result": "<p>서초구 요식업 매장 오픈 및 교체를 위한 스마트 오더...</p><div class=\"highlight-text\">\"테이블 회전율 향상과 간편 주문의 결합\"</div><p>철저한 사후 관리 서비스도 함께 제공합니다.</p>"
+  }
+]
