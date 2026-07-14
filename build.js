@@ -31,6 +31,7 @@ const TEMPLATE_FILE = path.join(process.cwd(), 'index.html');
 const CSS_FILE = path.join(process.cwd(), 'style.css');
 const IMAGES_DIR = path.join(process.cwd(), 'images');
 const DIST_DIR = path.join(process.cwd(), 'dist');
+const BASE_URL = 'https://van-weld.vercel.app';
 
 // Helper: Ensure directory exists recursively (thread-safe for parallel execution)
 function ensureDirectoryExistence(filePath) {
@@ -121,6 +122,72 @@ function mapLinkToFilePath(link, region, product) {
     return cleanPath;
 }
 
+// Helper: Escape XML special characters
+function escapeXml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe.replace(/[<>&'"]/g, (c) => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            default: return c;
+        }
+    });
+}
+
+// Helper: Generate sitemap.xml content
+function generateSitemap(pages) {
+    const currentDate = new Date().toISOString().split('T')[0];
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    
+    for (const page of pages) {
+        const priority = page.url === `${BASE_URL}/` ? '1.0' : '0.8';
+        const changefreq = page.url === `${BASE_URL}/` ? 'daily' : 'weekly';
+        
+        xml += `  <url>\n`;
+        xml += `    <loc>${escapeXml(page.url)}</loc>\n`;
+        xml += `    <lastmod>${currentDate}</lastmod>\n`;
+        xml += `    <changefreq>${changefreq}</changefreq>\n`;
+        xml += `    <priority>${priority}</priority>\n`;
+        xml += `  </url>\n`;
+    }
+    
+    xml += `</urlset>`;
+    return xml;
+}
+
+// Helper: Generate rss.xml content
+function generateRss(pages) {
+    const rfc822Date = new Date().toUTCString();
+    let xml = `<?xml version="1.0" encoding="UTF-8" ?>\n`;
+    xml += `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n`;
+    xml += `  <channel>\n`;
+    xml += `    <title>Van Weld</title>\n`;
+    xml += `    <link>${BASE_URL}</link>\n`;
+    xml += `    <description>합리적인 결제 시스템 추천 및 가격 비교 | Van Weld</description>\n`;
+    xml += `    <language>ko-kr</language>\n`;
+    xml += `    <pubDate>${rfc822Date}</pubDate>\n`;
+    xml += `    <lastBuildDate>${rfc822Date}</lastBuildDate>\n`;
+    xml += `    <atom:link href="${BASE_URL}/rss.xml" rel="self" type="application/rss+xml" />\n`;
+    
+    for (const page of pages) {
+        xml += `    <item>\n`;
+        xml += `      <title>${escapeXml(page.title)}</title>\n`;
+        xml += `      <link>${escapeXml(page.url)}</link>\n`;
+        xml += `      <guid isPermaLink="true">${escapeXml(page.url)}</guid>\n`;
+        xml += `      <description>${escapeXml(page.description)}</description>\n`;
+        xml += `      <pubDate>${rfc822Date}</pubDate>\n`;
+        xml += `    </item>\n`;
+    }
+    
+    xml += `  </channel>\n`;
+    xml += `</rss>`;
+    return xml;
+}
+
 // Build function
 async function build() {
     console.log('🚀 Starting static page generation...');
@@ -204,6 +271,7 @@ async function build() {
     // 5. Generate pages in batches to optimize file I/O speed
     let successCount = 0;
     let firstRowGenerated = false;
+    const generatedPages = [];
     console.log(`⚙️ Generating HTML pages asynchronously...`);
     
     const BATCH_SIZE = 100;
@@ -268,6 +336,23 @@ async function build() {
                 await fs.promises.writeFile(outputPath, outputHtml, 'utf8');
                 successCount++;
                 
+                // Collect URL (Lowercase, no .html extension, except for index.html map to root /)
+                const lowerFilename = filename.toLowerCase();
+                let pageUrl;
+                if (lowerFilename === 'index.html') {
+                    pageUrl = `${BASE_URL}/`;
+                } else {
+                    pageUrl = `${BASE_URL}/${lowerFilename.replace(/\.html$/, '')}`;
+                }
+                
+                if (!generatedPages.some(p => p.url === pageUrl)) {
+                    generatedPages.push({
+                        url: pageUrl,
+                        title: title,
+                        description: description
+                    });
+                }
+                
                 let isFirst = false;
                 if (!firstRowGenerated) {
                     firstRowGenerated = true;
@@ -277,6 +362,15 @@ async function build() {
                     const rootIndexPath = path.join(DIST_DIR, 'index.html');
                     await fs.promises.writeFile(rootIndexPath, outputHtml, 'utf8');
                     console.log(`🏠 Generated index.html from the first row data.`);
+                    
+                    const rootUrl = `${BASE_URL}/`;
+                    if (!generatedPages.some(p => p.url === rootUrl)) {
+                        generatedPages.push({
+                            url: rootUrl,
+                            title: title,
+                            description: description
+                        });
+                    }
                 }
                 
                 if (successCount % 1000 === 0) {
@@ -291,6 +385,29 @@ async function build() {
     }
     
     console.log(`\n🎉 Success! Generated ${successCount} pages in the ${DIST_DIR}/ directory.`);
+    
+    // 6. Generate sitemap.xml and rss.xml
+    if (generatedPages.length > 0) {
+        console.log(`📡 Generating sitemap.xml and rss.xml...`);
+        const sitemapXml = generateSitemap(generatedPages);
+        const rssXml = generateRss(generatedPages);
+        
+        try {
+            await fs.promises.writeFile(path.join(DIST_DIR, 'sitemap.xml'), sitemapXml, 'utf8');
+            console.log(`✅ Generated sitemap.xml with ${generatedPages.length} links.`);
+        } catch (err) {
+            console.error(`❌ Failed to write sitemap.xml: ${err.message}`);
+        }
+        
+        try {
+            await fs.promises.writeFile(path.join(DIST_DIR, 'rss.xml'), rssXml, 'utf8');
+            console.log(`✅ Generated rss.xml with ${generatedPages.length} items.`);
+        } catch (err) {
+            console.error(`❌ Failed to write rss.xml: ${err.message}`);
+        }
+    } else {
+        console.warn(`⚠️ No pages were generated, skipping sitemap and RSS generation.`);
+    }
 }
 
 build();
