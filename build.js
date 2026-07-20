@@ -30,6 +30,7 @@ const LOCAL_DATA_FILE = path.join(process.cwd(), 'data.json');
 const TEMPLATE_FILE = path.join(process.cwd(), 'index.html');
 const CSS_FILE = path.join(process.cwd(), 'style.css');
 const IMAGES_DIR = path.join(process.cwd(), 'images');
+const PUBLIC_DIR = path.join(process.cwd(), 'public');
 const DIST_DIR = path.join(process.cwd(), 'dist');
 const BASE_URL = 'https://van-weld.vercel.app';
 
@@ -266,6 +267,9 @@ async function build() {
     }
     if (fs.existsSync(IMAGES_DIR)) {
         copyDir(IMAGES_DIR, path.join(DIST_DIR, 'images'));
+    }
+    if (fs.existsSync(PUBLIC_DIR)) {
+        copyDir(PUBLIC_DIR, DIST_DIR);
     }
     
     // 5. Generate pages in batches to optimize file I/O speed
